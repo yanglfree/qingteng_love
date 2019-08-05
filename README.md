@@ -46,7 +46,7 @@ qingteng_love
 因为小程序刚启动的时候就会调用api接口，所以，一开始就可以debug到接口加密的地方，发现了Sign生成的地方。
 最后找到了这段代码，这个地方就是获取签名的过程，用的是SHA-1算法，用的是jssha这个第三方库来进行加密的。
 关于这个库，有个网站可以直接测试加密结果，很方便，调试的时候可以测试。
-https://caligatio.github.io/jsSHA/
+> https://caligatio.github.io/jsSHA/
 ![](http://ww1.sinaimg.cn/large/007dl3HPgy1g5ozu0eoeoj30ni0e8wgc.jpg)
 
 最后，根据上面的一顿操作，Sign就可以拿到了。然后，就可以干点事了。
