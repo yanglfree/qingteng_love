@@ -49,7 +49,7 @@ qingteng_love
 > https://caligatio.github.io/jsSHA/
 ![](http://ww1.sinaimg.cn/large/007dl3HPgy1g5ozu0eoeoj30ni0e8wgc.jpg)
 
-最后，根据上面的一顿操作，Sign就可以拿到了。然后，就可以干点事了。
+最后，根据上面的一顿操作，Sign就可以拿到了，经过跟前面抓包工具得到的数据比对，完全ok。有了sign，然后，就可以干点事了。
 
 #### request请求获取用户信息
 构造request请求，获取具体某个用户的信息
