@@ -49,9 +49,28 @@ qingteng_love
 > https://caligatio.github.io/jsSHA/
 ![](http://ww1.sinaimg.cn/large/007dl3HPgy1g5ozu0eoeoj30ni0e8wgc.jpg)
 
+#### 批量获取sign
+有了sign的获取逻辑，就可以批量获取sign了。因为这个地方要用到js的第三方库jssha（试了下python下的三方库，加密方式有区别，不能得到正确的sign。jssha这个地方，输入类型用的是‘TEXT’方式，输出用的base_64，python下面输入只能用二进制）这里，我先在JavaScript中批量获取sign存入mongo中，后面在python中读取mongo，得到sign和target_id。
+```Javascript
+function get_sign(user_id, message) {
+    //根据url params method生成sign签名
+    var sha = new jsSHA("SHA-1", "TEXT");
+    sha.setHMACKey(SECRET_KEY, "TEXT");
+    sha.update(message.join("&"));
+    sign = sha.getHMAC("B64");
+    return sign;
+}
+```
+这里的SECRET_KEY就是HMAC加密中的盐
+
+得到的sign保存到mongo中是这样的： 因为sign和target_id是一一对应的，所以这里用了一个“：”把两个连接起来保存了，后面就可以很方便的取出，保证一一对应，加了一个target_id字段是为了后面能够根据id来查询sign
+![](http://ww1.sinaimg.cn/large/007dl3HPgy1g5r5ejrpmyj30m80asmze.jpg)
+
+
 最后，根据上面的一顿操作，Sign就可以拿到了，经过跟前面抓包工具得到的数据比对，完全ok。有了sign，然后，就可以干点事了。
 
 #### request请求获取用户信息
+有了sign，获取用户个人信息毫无压力了。
 构造request请求，获取具体某个用户的信息,并存入mongo中
 ```python
 def get_user_info(sign, target_uid):
@@ -59,8 +78,8 @@ def get_user_info(sign, target_uid):
     headers={
         "content-type": "application/x-www-form-urlencoded",
         "AppVersion": "2.2.3",
-        "Sign":sign,
-        "authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVaWQiOjk2MjUxLCJleHAiOjE1NjYzNjA1MDh9.LW4dT8fqs7zXNLkB_YYqYDIqeTRwb0v3-vcjjZ74keY",
+        "Sign":sign, 
+        "authorization": "你自己的认证信息",
         "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 12_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.5(0x17000523) NetType/WIFI Language/zh_CN"
     }
 
@@ -150,7 +169,7 @@ def get_user_info(sign, target_uid):
 ```
 
 #### 批量获取
-批量获取并存入MongoDB
+批量获取并存入MongoDB 从数据库中读取批量的sign，然后遍历获取每个用户的信息
 ```python
 def get_info_sign(start, end):
     # mongo中取出sign和user_id拼接的字符串 拆开后即可构建header中的sign和param的target_uid
@@ -166,5 +185,20 @@ def get_info_sign(start, end):
         print('sign is', sign, 'target_uid is ', target_uid)
         get_user_info(sign, target_uid)
 ```
+#### 可以干点什么？
+现在，有了海量的用户数据，可以干点什么呢？嘿嘿，可以干的事情还真不少。
+首先，突破每天看5个用户的局限，系统每天只推荐5个用户，而且这5个用户里面一般只有一两个是VIP用户，效率有点低啊，这样相亲何时是个头啊，况且就算买了VIP，每天也只能看10个，太少了。
+现在，有了这些数据，那就没有什么限制了。
+```sql
+db.getCollection('user_info').find({'gender':'女','is_vip':true, 'city':'武汉'})
+```
+查一个，走起。不得不说，VIP用户的综合素质高多了，而且基本都是经过了认证的用户。
+![](http://ww1.sinaimg.cn/large/007dl3HPgy1g5r5s56yy6j31by0ui105.jpg)
+
+比如想查某个具体用户,知道青藤号就可以查到了
+
 #### 用matplotlib绘图
-饼图 柱状图等等
+有了海量的数据，还可以做下数据分析。
+根据这些数据，可以看下地域，学历，年龄，身高，性别，VIP用户，隐藏用户，还可以从关于里面查关键字来看下婚恋观等等。
+用matplotlib画饼状图，柱状图，一目了然。
+
