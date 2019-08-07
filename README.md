@@ -206,6 +206,15 @@ db.getCollection('user_info').find({'avatar_url':'xxxx'})
 ```
 还可以为你喜欢的某人手动点喜欢
 把uid拿去生成sign，然后去发请求，手动点喜欢的api是 **/like/add_like**
+使用requests构造POST 请求
+```python
+url = host + '/like/add_like'
+params={
+    'platform': 2,
+    'target_id': xxx
+}
+requests.post(url, headers=headers, data=params)
+```
 
 #### 用matplotlib绘图
 有了海量的数据，还可以做下数据分析。
