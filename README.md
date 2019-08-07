@@ -196,11 +196,16 @@ db.getCollection('user_info').find({'gender':'女','is_vip':true, 'city':'武汉
 ![](http://ww1.sinaimg.cn/large/007dl3HPgy1g5r5s56yy6j31by0ui105.jpg)
 
 比如想查某个具体用户,知道青藤号就可以查到了
+```sql
 db.getCollection('user_info').find({'uid':'xxxx'})
+```
 
 甚至，你不知道某人的id，直接可以根据头像去查找一个用户,因为每个用户的头像url是唯一的
+```
 db.getCollection('user_info').find({'avatar_url':'xxxx'})
-
+```
+还可以为你喜欢的某人手动点喜欢
+把uid拿去生成sign，然后去发请求，手动点喜欢的api是 **/like/add_like**
 
 #### 用matplotlib绘图
 有了海量的数据，还可以做下数据分析。
