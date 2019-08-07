@@ -52,10 +52,119 @@ qingteng_love
 最后，根据上面的一顿操作，Sign就可以拿到了，经过跟前面抓包工具得到的数据比对，完全ok。有了sign，然后，就可以干点事了。
 
 #### request请求获取用户信息
-构造request请求，获取具体某个用户的信息
+构造request请求，获取具体某个用户的信息,并存入mongo中
+```python
+def get_user_info(sign, target_uid):
+    url = host + "/user/get_user_info"
+    headers={
+        "content-type": "application/x-www-form-urlencoded",
+        "AppVersion": "2.2.3",
+        "Sign":sign,
+        "authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVaWQiOjk2MjUxLCJleHAiOjE1NjYzNjA1MDh9.LW4dT8fqs7zXNLkB_YYqYDIqeTRwb0v3-vcjjZ74keY",
+        "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 12_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.5(0x17000523) NetType/WIFI Language/zh_CN"
+    }
+
+    params = {
+        "target_uid": target_uid,
+        "platform": 2
+    }
+    try:
+        response = requests.post(url,data=params,headers= headers,stream=False,timeout=20)
+        user_json = json.loads(response.text)
+        user_json = user_json["data"]
+        # print(user_json)
+        # uid为0 无效用户 过滤掉
+        if user_json["uid"] == 0:
+            print('无效用户')
+            return
+        # 注销用户 过滤掉
+        if user_json["nickname"] == "用户已注销":
+            print('已注销用户')
+            return
+        # 学校级别
+        school_level = user_json["school_level"]
+        if school_level == 0:
+            school_level_str = "无"
+        if school_level == 1:
+            school_level_str = "211及以上"
+        elif school_level == 2:
+            school_level_str = "一本"
+        elif school_level == 3:
+            school_level_str = "普通本科"
+        elif school_level == 4:
+            school_level_str = "专科"
+
+        # 性别
+        gender = user_json["gender"]
+        if gender == 1:
+            gender_str = "男"
+        else:
+            gender_str = "女"
+ 
+        user = {
+            "uid": user_json["uid"],
+            "nickname": user_json["nickname"],
+            "gender": gender_str,
+            "avatar_url": user_json["avatar_url"],
+            "birthday": user_json["birthday"],
+            "age":user_json["age"],
+            "province": user_json["province"],
+            "city": user_json["city"],
+            "phone": user_json["phone"],
+            "school": user_json["school"],
+            "school_level": user_json["school_level"],
+            "school_level_str": school_level_str,
+            "education": user_json["education"],
+            "education_type": user_json["education_type"],
+            "stature": user_json["stature"],
+            "wid": user_json["wid"],
+            "about_me": user_json["about_me"],
+            "hobbies": user_json["hobbies"],
+            "emotional_view": user_json["emotional_view"],
+            "about_half": user_json["about_half"],
+            "annual_salary": user_json["annual_salary"],
+            "is_show": user_json["is_show"],
+            "photos": user_json["photos"],
+            "check_status": user_json["check_status"],
+            "profession": user_json["profession"],
+            "inviter": user_json["inviter"],
+            "horoscope": user_json["horoscope"],
+            "is_vip": user_json["is_vip"],
+            "wxid": user_json["wxid"],
+            "is_show_vip": user_json["is_show_vip"],
+            "photo_list": user_json["photo_list"],
+            "is_liked": user_json["is_liked"],
+            "is_super_liked": user_json["is_super_liked"],
+            "two_way_like": user_json["two_way_like"],
+            "moment_photos": user_json["moment_photos"],
+            "moment_total": user_json["moment_total"],
+            "refuse_reason": user_json["refuse_reason"]
+        }
+        # condition = {'uid':user["uid"]}   更新
+        # db.user_info.update_one(condition, {'$set':user})
+        db.user_info.insert_one(user)
+        response.close()
+        print("mongo保存成功")
+    except Exception as e:
+        print('Error is----------', e)
+```
 
 #### 批量获取
 批量获取并存入MongoDB
-
+```python
+def get_info_sign(start, end):
+    # mongo中取出sign和user_id拼接的字符串 拆开后即可构建header中的sign和param的target_uid
+    datas = db.user_info_signs.find({"target_id":{'$gte':start, '$lte':end}})
+    # datas = db.user_info_signs.find({"target_id":20000})
+    for data in datas:
+        # 睡眠1~3秒 开始睡眠是担心被反爬，后来发现并没有，所以取消了睡眠
+        # time.sleep(random.randint(1,3))
+        # time.sleep(1)
+        strs = data["sign"].split(":")
+        sign = strs[0]
+        target_uid = strs[1]
+        print('sign is', sign, 'target_uid is ', target_uid)
+        get_user_info(sign, target_uid)
+```
 #### 用matplotlib绘图
 饼图 柱状图等等
